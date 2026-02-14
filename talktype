@@ -97,7 +97,7 @@ if [ -f "$PIDFILE" ]; then
     notify_close
 
     # Type text at cursor via ydotool
-    ydotool type --key-delay 50 -- "$TEXT"
+    ydotool type --key-delay 20 -- "$TEXT"
 
 # ── Otherwise → start recording ──
 else
