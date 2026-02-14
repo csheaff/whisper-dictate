@@ -1,12 +1,17 @@
 # talktype
 
-Push-to-talk speech-to-text for Linux. Bind a keyboard shortcut, press it to
-start recording, press it again to transcribe and type the text wherever your
-cursor is.
+Push-to-talk speech-to-text for Linux. Press a hotkey to start recording, press
+it again to transcribe and type the text wherever your cursor is. No GUI, no
+app to keep running — just a keyboard shortcut.
 
-Transcription is pluggable — ships with
-[faster-whisper](https://github.com/SYSTRAN/faster-whisper) by default, but you
-can swap in any model or tool that reads audio and prints text.
+- **Pluggable backends** — swap transcription models without changing anything else
+- **Works everywhere** — GNOME, Sway, Hyprland, i3, X11
+- **~100 lines of bash** — easy to read, easy to hack on
+
+Ships with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) by
+default, plus optional [Parakeet](https://huggingface.co/nvidia/parakeet-ctc-1.1b)
+and [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base) backends.
+Or bring your own — anything that reads a WAV and prints text works.
 
 > **Note:** This project is in early development — expect rough edges. If you
 > run into issues, please [open a bug](https://github.com/csheaff/talktype/issues).
