@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mock transcriber that fails
+echo "error: model not found" >&2
+exit 1

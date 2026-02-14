@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Mock pw-record: write PID so tests can clean up, sleep in background
+# Mock pw-record: log that it was called, sleep like a recording process
+echo "pw-record" > "$TALKTYPE_DIR/recorder.log"
 trap 'exit 0' TERM
 sleep 300 &
 wait $!
