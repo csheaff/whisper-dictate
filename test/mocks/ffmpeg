@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Mock ffmpeg: sleep like a recording process
+trap 'exit 0' TERM
+sleep 300 &
+wait $!

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          additional_files: talktype transcribe-server backends/parakeet backends/parakeet-server backends/moonshine backends/moonshine-server
+          scandir: test/mocks
+
+      - name: Python syntax check
+        run: python3 -m py_compile transcribe && python3 -m py_compile whisper-daemon.py && python3 -m py_compile backends/parakeet-daemon.py && python3 -m py_compile backends/moonshine-daemon.py
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats
+
+      - name: Install test dependencies
+        run: sudo apt-get install -y ydotool pipewire libnotify-bin
+
+      - name: Run unit tests
+        run: bats test/talktype.bats
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit whisper dependencies
+        run: |
+          python3 -m venv /tmp/audit-venv
+          /tmp/audit-venv/bin/pip install --upgrade pip
+          /tmp/audit-venv/bin/pip install faster-whisper
+          /tmp/audit-venv/bin/pip install pip-audit
+          /tmp/audit-venv/bin/pip-audit
+
+      - name: Audit moonshine dependencies
+        run: |
+          python3 -m venv /tmp/audit-moonshine
+          /tmp/audit-moonshine/bin/pip install --upgrade pip
+          /tmp/audit-moonshine/bin/pip install transformers torch soundfile
+          /tmp/audit-moonshine/bin/pip install pip-audit
+          /tmp/audit-moonshine/bin/pip-audit
