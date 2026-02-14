@@ -33,7 +33,7 @@ parakeet: backends/.parakeet-venv/.done
 backends/.parakeet-venv/.done:
 	python3 -m venv backends/.parakeet-venv
 	backends/.parakeet-venv/bin/pip install --upgrade pip
-	backends/.parakeet-venv/bin/pip install transformers torch soundfile librosa
+	backends/.parakeet-venv/bin/pip install transformers torch soundfile librosa accelerate
 	touch backends/.parakeet-venv/.done
 
 test:
