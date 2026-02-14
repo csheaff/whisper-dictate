@@ -1,63 +1,63 @@
 #!/usr/bin/env bats
 
-# Test suite for the dictate script.
+# Test suite for the talktype script.
 # All external commands (pw-record, ydotool, etc.) are stubbed
 # with simple mocks so we can test the control flow in isolation.
 
 setup() {
-    export DICTATE_DIR="$BATS_TEST_TMPDIR/dictate"
-    export DICTATE_CMD="$BATS_TEST_DIRNAME/mock-transcribe"
+    export TALKTYPE_DIR="$BATS_TEST_TMPDIR/talktype"
+    export TALKTYPE_CMD="$BATS_TEST_DIRNAME/mock-transcribe"
 
     # Put mocks on PATH before real commands
     export PATH="$BATS_TEST_DIRNAME/mocks:$PATH"
 
     # The script under test
-    DICTATE="$BATS_TEST_DIRNAME/../dictate"
+    TALKTYPE="$BATS_TEST_DIRNAME/../talktype"
 
-    mkdir -p "$DICTATE_DIR"
+    mkdir -p "$TALKTYPE_DIR"
 }
 
 teardown() {
     # Kill any leftover recording processes
-    if [ -f "$DICTATE_DIR/rec.pid" ]; then
-        kill "$(cat "$DICTATE_DIR/rec.pid")" 2>/dev/null || true
+    if [ -f "$TALKTYPE_DIR/rec.pid" ]; then
+        kill "$(cat "$TALKTYPE_DIR/rec.pid")" 2>/dev/null || true
     fi
-    rm -rf "$DICTATE_DIR"
+    rm -rf "$TALKTYPE_DIR"
 }
 
 # Helper: set up a fake "in-progress recording" state
 start_fake_recording() {
     sleep 300 &
-    echo $! > "$DICTATE_DIR/rec.pid"
-    echo "audio data" > "$DICTATE_DIR/rec.wav"
+    echo $! > "$TALKTYPE_DIR/rec.pid"
+    echo "audio data" > "$TALKTYPE_DIR/rec.wav"
 }
 
 # ── Recording lifecycle ──
 
 @test "first invocation starts recording and creates pid file" {
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
-    [ -f "$DICTATE_DIR/rec.pid" ]
+    [ -f "$TALKTYPE_DIR/rec.pid" ]
 
     # Verify the PID file contains a valid PID
-    pid=$(cat "$DICTATE_DIR/rec.pid")
+    pid=$(cat "$TALKTYPE_DIR/rec.pid")
     kill -0 "$pid" 2>/dev/null
 }
 
 @test "second invocation stops recording and removes pid file" {
     start_fake_recording
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
-    [ ! -f "$DICTATE_DIR/rec.pid" ]
+    [ ! -f "$TALKTYPE_DIR/rec.pid" ]
 }
 
 @test "audio file is cleaned up after transcription" {
     start_fake_recording
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
-    [ ! -f "$DICTATE_DIR/rec.wav" ]
+    [ ! -f "$TALKTYPE_DIR/rec.wav" ]
 }
 
 # ── Transcription ──
@@ -65,34 +65,34 @@ start_fake_recording() {
 @test "transcribed text is typed via ydotool" {
     start_fake_recording
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
 
     # ydotool mock logs its args
-    [[ "$(cat "$DICTATE_DIR/ydotool.log")" == *"hello world"* ]]
+    [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"hello world"* ]]
 }
 
-@test "custom DICTATE_CMD is used for transcription" {
+@test "custom TALKTYPE_CMD is used for transcription" {
     start_fake_recording
-    export DICTATE_CMD="$BATS_TEST_DIRNAME/mock-transcribe-custom"
+    export TALKTYPE_CMD="$BATS_TEST_DIRNAME/mock-transcribe-custom"
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
 
-    [[ "$(cat "$DICTATE_DIR/ydotool.log")" == *"custom output"* ]]
+    [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"custom output"* ]]
 }
 
 # ── Empty transcription ──
 
 @test "exits cleanly when no speech is detected" {
     start_fake_recording
-    export DICTATE_CMD="$BATS_TEST_DIRNAME/mock-transcribe-empty"
+    export TALKTYPE_CMD="$BATS_TEST_DIRNAME/mock-transcribe-empty"
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 0 ]
 
     # ydotool should NOT have been called
-    [ ! -f "$DICTATE_DIR/ydotool.log" ]
+    [ ! -f "$TALKTYPE_DIR/ydotool.log" ]
 }
 
 # ── Dependency checking ──
@@ -113,7 +113,7 @@ start_fake_recording() {
 
     PATH="$sparse"
 
-    run "$DICTATE"
+    run "$TALKTYPE"
     [ "$status" -eq 1 ]
     [[ "$output" == *"Missing"*"ydotool"* ]]
 }

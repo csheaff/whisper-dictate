@@ -2,7 +2,7 @@
 # Transcription backend using Moonshine Base (CPU-optimized, 61.5M params).
 #
 # Install:  make moonshine
-# Usage:    DICTATE_CMD="./backends/moonshine" dictate
+# Usage:    TALKTYPE_CMD="./backends/moonshine" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV="$SCRIPT_DIR/.moonshine-venv"

@@ -5,7 +5,7 @@
 # Usage:
 #   backends/parakeet-server start   # start the server (loads model)
 #   backends/parakeet-server stop    # stop the server
-#   DICTATE_CMD="backends/parakeet-server transcribe" dictate  # use with dictate
+#   TALKTYPE_CMD="backends/parakeet-server transcribe" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV="$SCRIPT_DIR/.parakeet-venv"
@@ -45,7 +45,7 @@ case "${1:-}" in
         fi
         ;;
     transcribe)
-        # Called by dictate — sends audio path to the server, prints result
+        # Called by talktype — sends audio path to the server, prints result
         if [ ! -S "$SOCK" ]; then
             echo "Parakeet server not running. Start it with: backends/parakeet-server start" >&2
             exit 1

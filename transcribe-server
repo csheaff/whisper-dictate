@@ -4,12 +4,12 @@
 # Usage:
 #   transcribe-server start   # start the server (loads model)
 #   transcribe-server stop    # stop the server
-#   DICTATE_CMD="transcribe-server transcribe" dictate
+#   TALKTYPE_CMD="transcribe-server transcribe" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV="${DICTATE_VENV:-$SCRIPT_DIR/.venv}"
-SOCK="${XDG_RUNTIME_DIR:-/tmp}/whisper-dictate.sock"
-PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/whisper-dictate-server.pid"
+VENV="${TALKTYPE_VENV:-$SCRIPT_DIR/.venv}"
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/talktype-whisper.sock"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/talktype-whisper.pid"
 
 WHISPER_MODEL="${WHISPER_MODEL:-base}"
 WHISPER_LANG="${WHISPER_LANG:-en}"

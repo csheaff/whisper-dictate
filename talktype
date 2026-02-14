@@ -1,39 +1,38 @@
 #!/usr/bin/env bash
 #
-# dictate — push-to-talk speech-to-text for Wayland
+# talktype — push-to-talk speech-to-text for Linux
 #
 # Bind to a keyboard shortcut. Press once to start recording,
 # press again to stop, transcribe, and type the text wherever
 # your cursor is.
 #
-# Transcription is pluggable: set DICTATE_CMD to any command that
+# Transcription is pluggable: set TALKTYPE_CMD to any command that
 # takes a WAV file path as its last argument and prints text to stdout.
 #
 # Requires: ydotool, pw-record (PipeWire)
 #
 set -euo pipefail
 
-DICTATE_DIR="${DICTATE_DIR:-${XDG_RUNTIME_DIR:-/tmp}/whisper-dictate}"
-PIDFILE="$DICTATE_DIR/rec.pid"
-AUDIOFILE="$DICTATE_DIR/rec.wav"
+TALKTYPE_DIR="${TALKTYPE_DIR:-${XDG_RUNTIME_DIR:-/tmp}/talktype}"
+PIDFILE="$TALKTYPE_DIR/rec.pid"
+AUDIOFILE="$TALKTYPE_DIR/rec.wav"
 
-mkdir -p "$DICTATE_DIR"
+mkdir -p "$TALKTYPE_DIR"
 
 # ── Default transcription command (faster-whisper) ──
-# Override with DICTATE_CMD to use any transcriber, e.g.:
-#   DICTATE_CMD="whisper-cpp -m /path/to/model.bin -f" dictate
-#   DICTATE_CMD="vosk-transcriber --input" dictate
-#   DICTATE_CMD="my-custom-script" dictate
+# Override with TALKTYPE_CMD to use any transcriber, e.g.:
+#   TALKTYPE_CMD="whisper-cpp -m /path/to/model.bin -f" talktype
+#   TALKTYPE_CMD="my-custom-script" talktype
 # The audio file path is appended as the last argument.
-if [ -z "${DICTATE_CMD:-}" ]; then
+if [ -z "${TALKTYPE_CMD:-}" ]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-    VENV_DIR="${DICTATE_VENV:-$SCRIPT_DIR/.venv}"
+    VENV_DIR="${TALKTYPE_VENV:-$SCRIPT_DIR/.venv}"
     WHISPER_MODEL="${WHISPER_MODEL:-base}"
     WHISPER_LANG="${WHISPER_LANG:-en}"
     WHISPER_DEVICE="${WHISPER_DEVICE:-cuda}"
     WHISPER_COMPUTE="${WHISPER_COMPUTE:-float16}"
 
-    DICTATE_CMD="$VENV_DIR/bin/python3 $SCRIPT_DIR/transcribe $WHISPER_MODEL $WHISPER_LANG $WHISPER_DEVICE $WHISPER_COMPUTE"
+    TALKTYPE_CMD="$VENV_DIR/bin/python3 $SCRIPT_DIR/transcribe $WHISPER_MODEL $WHISPER_LANG $WHISPER_DEVICE $WHISPER_COMPUTE"
 fi
 
 # ── Check core dependencies ──
@@ -45,7 +44,7 @@ check_deps() {
 
     if [ ${#missing[@]} -gt 0 ]; then
         echo "Missing: ${missing[*]}" >&2
-        notify-send -h string:x-canonical-private-synchronous:dictate -t 3000 -i dialog-error "Dictation" "Missing: ${missing[*]}" 2>/dev/null || true
+        notify-send -h string:x-canonical-private-synchronous:talktype -t 3000 -i dialog-error "TalkType" "Missing: ${missing[*]}" 2>/dev/null || true
         exit 1
     fi
 }
@@ -60,12 +59,12 @@ if [ -f "$PIDFILE" ]; then
     rm -f "$PIDFILE"
 
     # Run the transcription command with the audio file as last arg
-    TEXT=$($DICTATE_CMD "$AUDIOFILE")
+    TEXT=$($TALKTYPE_CMD "$AUDIOFILE")
 
     rm -f "$AUDIOFILE"
 
     if [ -z "$TEXT" ]; then
-        notify-send -h string:x-canonical-private-synchronous:dictate -t 1500 -i dialog-warning "Dictation" "No speech detected" 2>/dev/null || true
+        notify-send -h string:x-canonical-private-synchronous:talktype -t 1500 -i dialog-warning "TalkType" "No speech detected" 2>/dev/null || true
         exit 0
     fi
 
@@ -85,5 +84,5 @@ else
     PID=$!
     disown "$PID"
     echo "$PID" > "$PIDFILE"
-    notify-send -h string:x-canonical-private-synchronous:dictate -t 1500 -i audio-input-microphone "Dictation" "Listening..." 2>/dev/null || true
+    notify-send -h string:x-canonical-private-synchronous:talktype -t 1500 -i audio-input-microphone "TalkType" "Listening..." 2>/dev/null || true
 fi

@@ -5,9 +5,9 @@ PREFIX ?= $(HOME)/.local
 # Full setup: system deps + venv + symlink into PATH
 install: deps venv
 	mkdir -p $(PREFIX)/bin
-	ln -sf $(CURDIR)/dictate $(PREFIX)/bin/dictate
+	ln -sf $(CURDIR)/talktype $(PREFIX)/bin/talktype
 	@echo ""
-	@echo "Installed to $(PREFIX)/bin/dictate"
+	@echo "Installed to $(PREFIX)/bin/talktype"
 	@echo "Now bind it to a keyboard shortcut in your desktop settings."
 
 # Install system dependencies (requires sudo)
@@ -49,7 +49,7 @@ test:
 	bats test/
 
 uninstall:
-	rm -f $(PREFIX)/bin/dictate
+	rm -f $(PREFIX)/bin/talktype
 
 clean:
 	rm -rf .venv

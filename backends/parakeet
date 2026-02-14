@@ -2,7 +2,7 @@
 # Transcription backend using NVIDIA Parakeet CTC 1.1B (via HuggingFace Transformers).
 #
 # Install:  make parakeet
-# Usage:    DICTATE_CMD="./backends/parakeet" dictate
+# Usage:    TALKTYPE_CMD="./backends/parakeet" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV="$SCRIPT_DIR/.parakeet-venv"

@@ -1,6 +1,6 @@
-# whisper-dictate
+# talktype
 
-Push-to-talk speech-to-text for Wayland. Bind a keyboard shortcut, press it to
+Push-to-talk speech-to-text for Linux. Bind a keyboard shortcut, press it to
 start recording, press it again to transcribe and type the text wherever your
 cursor is.
 
@@ -21,15 +21,15 @@ For the default backend (faster-whisper):
 ## Install
 
 ```bash
-git clone https://github.com/csheaff/whisper-dictate.git
-cd whisper-dictate
+git clone https://github.com/csheaff/talktype.git
+cd talktype
 make install
 ```
 
 This will:
 1. Install system packages (`ydotool`, etc.)
 2. Create a Python venv with `faster-whisper`
-3. Symlink `dictate` into `~/.local/bin/`
+3. Symlink `talktype` into `~/.local/bin/`
 
 ### ydotool permissions
 
@@ -51,16 +51,16 @@ make model
 
 ## Setup
 
-Bind `dictate` to a keyboard shortcut:
+Bind `talktype` to a keyboard shortcut:
 
 **GNOME:** Settings → Keyboard → Keyboard Shortcuts → Custom Shortcuts
-- Name: `Dictate`
-- Command: `dictate` (or full path `~/.local/bin/dictate`)
+- Name: `TalkType`
+- Command: `talktype` (or full path `~/.local/bin/talktype`)
 - Shortcut: your choice (e.g. `Super+D`, `F11`, etc.)
 
 **Sway / Hyprland:** Add to your config:
 ```
-bindsym $mod+d exec dictate
+bindsym $mod+d exec talktype
 ```
 
 ## Usage
@@ -81,11 +81,11 @@ Best with a GPU.
 
 ```bash
 # One-shot (default, no extra setup needed)
-dictate
+talktype
 
 # Server mode (faster — model stays in memory)
 transcribe-server start
-export DICTATE_CMD="$HOME/code/whisper-dictate/transcribe-server transcribe"
+export TALKTYPE_CMD="$HOME/code/talktype/transcribe-server transcribe"
 ```
 
 | Variable | Default | Description |
@@ -105,7 +105,7 @@ make parakeet
 
 # Server mode (recommended — 4.2GB model)
 backends/parakeet-server start
-export DICTATE_CMD="$HOME/code/whisper-dictate/backends/parakeet-server transcribe"
+export TALKTYPE_CMD="$HOME/code/talktype/backends/parakeet-server transcribe"
 ```
 
 ### Moonshine (CPU, lightweight)
@@ -118,11 +118,11 @@ models 28x its size.
 make moonshine
 
 # One-shot (fine for this small model)
-export DICTATE_CMD="$HOME/code/whisper-dictate/backends/moonshine"
+export TALKTYPE_CMD="$HOME/code/talktype/backends/moonshine"
 
 # Or server mode
 backends/moonshine-server start
-export DICTATE_CMD="$HOME/code/whisper-dictate/backends/moonshine-server transcribe"
+export TALKTYPE_CMD="$HOME/code/talktype/backends/moonshine-server transcribe"
 ```
 
 Set `MOONSHINE_MODEL=UsefulSensors/moonshine-tiny` for an even smaller 27M
@@ -130,14 +130,14 @@ param model.
 
 ### Custom backends
 
-Set `DICTATE_CMD` to any command that takes a WAV file path as its last
+Set `TALKTYPE_CMD` to any command that takes a WAV file path as its last
 argument and prints text to stdout:
 
 ```bash
-export DICTATE_CMD="/path/to/my-transcriber"
+export TALKTYPE_CMD="/path/to/my-transcriber"
 ```
 
-Your command will be called as: `$DICTATE_CMD /path/to/recording.wav`
+Your command will be called as: `$TALKTYPE_CMD /path/to/recording.wav`
 
 It should print the transcribed text to stdout and exit. That's the only
 contract — use whatever model, language, or runtime you want.
@@ -147,12 +147,12 @@ contract — use whatever model, language, or runtime you want.
 ```
 [hotkey] → recording starts → [hotkey] → recording stops
                                             ↓
-                                     $DICTATE_CMD audio.wav
+                                     $TALKTYPE_CMD audio.wav
                                             ↓
                                      ydotool type → text appears at cursor
 ```
 
-The `dictate` script is ~80 lines of bash. Transcription backends are
+The `talktype` script is ~80 lines of bash. Transcription backends are
 swappable. Server mode uses Unix sockets to keep models in memory.
 
 ## License

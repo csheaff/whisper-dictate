@@ -5,7 +5,7 @@
 # Usage:
 #   backends/moonshine-server start   # start (loads model)
 #   backends/moonshine-server stop    # stop
-#   DICTATE_CMD="backends/moonshine-server transcribe" dictate
+#   TALKTYPE_CMD="backends/moonshine-server transcribe" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV="$SCRIPT_DIR/.moonshine-venv"
