@@ -6,8 +6,38 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  security-events: write
+
 jobs:
-  audit:
+  codeql:
+    name: CodeQL analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+
+  gitleaks:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
