@@ -4,3 +4,4 @@ backends/.moonshine-venv/
 __pycache__/
 *.pyc
 *.wav
+!test/fixtures/*.wav
