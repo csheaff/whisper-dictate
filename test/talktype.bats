@@ -95,6 +95,71 @@ start_fake_recording() {
     [ ! -f "$TALKTYPE_DIR/ydotool.log" ]
 }
 
+# ── Error handling ──
+
+@test "stale pid file with dead process still transcribes" {
+    # Simulate a crashed recording: PID file points to a dead process
+    echo "99999" > "$TALKTYPE_DIR/rec.pid"
+    echo "audio data" > "$TALKTYPE_DIR/rec.wav"
+
+    run "$TALKTYPE"
+    [ "$status" -eq 0 ]
+
+    # Should have cleaned up and transcribed
+    [ ! -f "$TALKTYPE_DIR/rec.pid" ]
+    [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"hello world"* ]]
+}
+
+@test "transcription command failure is handled" {
+    start_fake_recording
+    export TALKTYPE_CMD="$BATS_TEST_DIRNAME/mock-transcribe-fail"
+
+    run "$TALKTYPE"
+
+    # Script should fail (set -e catches the non-zero exit)
+    [ "$status" -ne 0 ]
+
+    # ydotool should NOT have been called
+    [ ! -f "$TALKTYPE_DIR/ydotool.log" ]
+}
+
+# ── Recorder selection ──
+
+@test "ffmpeg is preferred over pw-record when available" {
+    run "$TALKTYPE"
+    [ "$status" -eq 0 ]
+    [ -f "$TALKTYPE_DIR/recorder.log" ]
+
+    [[ "$(cat "$TALKTYPE_DIR/recorder.log")" == "ffmpeg" ]]
+}
+
+@test "pw-record is used when ffmpeg is not available" {
+    # Remove ffmpeg from PATH by creating a sparse PATH without it
+    local sparse="$BATS_TEST_TMPDIR/no_ffmpeg"
+    mkdir -p "$sparse"
+
+    # Copy all mocks except ffmpeg
+    for mock in "$BATS_TEST_DIRNAME"/mocks/*; do
+        name=$(basename "$mock")
+        [ "$name" = "ffmpeg" ] && continue
+        ln -sf "$mock" "$sparse/$name"
+    done
+
+    # Add essential system tools
+    for cmd in bash mkdir cat kill sleep echo rm wait; do
+        local path
+        path=$(command -v "$cmd" 2>/dev/null) && ln -sf "$path" "$sparse/$cmd"
+    done
+
+    PATH="$sparse"
+
+    run "$TALKTYPE"
+    [ "$status" -eq 0 ]
+    [ -f "$TALKTYPE_DIR/recorder.log" ]
+
+    [[ "$(cat "$TALKTYPE_DIR/recorder.log")" == "pw-record" ]]
+}
+
 # ── Dependency checking ──
 
 @test "fails when a required tool is missing" {

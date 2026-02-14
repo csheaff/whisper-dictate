@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Mock ffmpeg: sleep like a recording process
+# Mock ffmpeg: log that it was called, sleep like a recording process
+echo "ffmpeg" > "$TALKTYPE_DIR/recorder.log"
 trap 'exit 0' TERM
 sleep 300 &
 wait $!
