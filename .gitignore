@@ -1,4 +1,5 @@
 .venv/
+backends/.parakeet-venv/
 __pycache__/
 *.pyc
 *.wav

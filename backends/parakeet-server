@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Parakeet transcription server — keeps the model loaded in memory.
+#
+# Install:  make parakeet
+# Usage:
+#   backends/parakeet-server start   # start the server (loads model)
+#   backends/parakeet-server stop    # stop the server
+#   DICTATE_CMD="backends/parakeet-server transcribe" dictate  # use with dictate
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV="$SCRIPT_DIR/.parakeet-venv"
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/parakeet.sock"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/parakeet-server.pid"
+
+case "${1:-}" in
+    start)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "Already running (PID $(cat "$PIDFILE"))"
+            exit 0
+        fi
+        echo "Starting parakeet server (loading model)..."
+        "$VENV/bin/python3" "$SCRIPT_DIR/parakeet-daemon.py" "$SOCK" &
+        PID=$!
+        disown "$PID"
+        echo "$PID" > "$PIDFILE"
+        # Wait for socket to appear
+        for i in $(seq 1 60); do
+            [ -S "$SOCK" ] && break
+            sleep 1
+        done
+        if [ -S "$SOCK" ]; then
+            echo "Ready (PID $PID)"
+        else
+            echo "Failed to start" >&2
+            exit 1
+        fi
+        ;;
+    stop)
+        if [ -f "$PIDFILE" ]; then
+            kill "$(cat "$PIDFILE")" 2>/dev/null || true
+            rm -f "$PIDFILE" "$SOCK"
+            echo "Stopped"
+        else
+            echo "Not running"
+        fi
+        ;;
+    transcribe)
+        # Called by dictate — sends audio path to the server, prints result
+        if [ ! -S "$SOCK" ]; then
+            echo "Parakeet server not running. Start it with: backends/parakeet-server start" >&2
+            exit 1
+        fi
+        echo "$2" | socat - UNIX-CONNECT:"$SOCK"
+        ;;
+    *)
+        echo "Usage: parakeet-server {start|stop|transcribe <audio.wav>}" >&2
+        exit 1
+        ;;
+esac

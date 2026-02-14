@@ -74,10 +74,16 @@ if [ -f "$PIDFILE" ]; then
 
 # ── Otherwise → start recording ──
 else
-    pw-record --format=s16 --rate=16000 --channels=1 "$AUDIOFILE" &>/dev/null &
+    # Use ffmpeg to record with a 1-second pre-roll buffer, so speech
+    # that starts immediately on keypress is captured.
+    if command -v ffmpeg &>/dev/null; then
+        ffmpeg -loglevel quiet -f pulse -i default \
+            -ac 1 -ar 16000 -f wav "$AUDIOFILE" &>/dev/null &
+    else
+        pw-record --format=s16 --rate=16000 --channels=1 "$AUDIOFILE" &>/dev/null &
+    fi
     PID=$!
     disown "$PID"
     echo "$PID" > "$PIDFILE"
-    sleep 0.2
     notify-send -h string:x-canonical-private-synchronous:dictate -t 1500 -i audio-input-microphone "Dictation" "Listening..." 2>/dev/null || true
 fi

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Whisper transcription server — keeps the model loaded in memory.
+#
+# Usage:
+#   transcribe-server start   # start the server (loads model)
+#   transcribe-server stop    # stop the server
+#   DICTATE_CMD="transcribe-server transcribe" dictate
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV="${DICTATE_VENV:-$SCRIPT_DIR/.venv}"
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/whisper-dictate.sock"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/whisper-dictate-server.pid"
+
+WHISPER_MODEL="${WHISPER_MODEL:-base}"
+WHISPER_LANG="${WHISPER_LANG:-en}"
+WHISPER_DEVICE="${WHISPER_DEVICE:-cuda}"
+WHISPER_COMPUTE="${WHISPER_COMPUTE:-float16}"
+
+case "${1:-}" in
+    start)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "Already running (PID $(cat "$PIDFILE"))"
+            exit 0
+        fi
+        echo "Starting whisper server (loading $WHISPER_MODEL model)..."
+        "$VENV/bin/python3" "$SCRIPT_DIR/whisper-daemon.py" "$SOCK" "$WHISPER_MODEL" "$WHISPER_LANG" "$WHISPER_DEVICE" "$WHISPER_COMPUTE" &
+        PID=$!
+        disown "$PID"
+        echo "$PID" > "$PIDFILE"
+        for i in $(seq 1 30); do
+            [ -S "$SOCK" ] && break
+            sleep 1
+        done
+        if [ -S "$SOCK" ]; then
+            echo "Ready (PID $PID)"
+        else
+            echo "Failed to start" >&2
+            exit 1
+        fi
+        ;;
+    stop)
+        if [ -f "$PIDFILE" ]; then
+            kill "$(cat "$PIDFILE")" 2>/dev/null || true
+            rm -f "$PIDFILE" "$SOCK"
+            echo "Stopped"
+        else
+            echo "Not running"
+        fi
+        ;;
+    transcribe)
+        if [ ! -S "$SOCK" ]; then
+            echo "Whisper server not running. Start it with: transcribe-server start" >&2
+            exit 1
+        fi
+        echo "$2" | socat - UNIX-CONNECT:"$SOCK"
+        ;;
+    *)
+        echo "Usage: transcribe-server {start|stop|transcribe <audio.wav>}" >&2
+        exit 1
+        ;;
+esac

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Transcription backend using NVIDIA Parakeet CTC 1.1B (via HuggingFace Transformers).
+#
+# Install:  make parakeet
+# Usage:    DICTATE_CMD="./backends/parakeet" dictate
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV="$SCRIPT_DIR/.parakeet-venv"
+
+exec "$VENV/bin/python3" -c "
+import sys
+import soundfile as sf
+from transformers import AutoProcessor, AutoModelForCTC
+
+audio, sr = sf.read(sys.argv[1])
+
+processor = AutoProcessor.from_pretrained('nvidia/parakeet-ctc-1.1b')
+model = AutoModelForCTC.from_pretrained('nvidia/parakeet-ctc-1.1b', device_map='cuda')
+
+inputs = processor(audio, sampling_rate=sr)
+inputs.to(model.device, dtype=model.dtype)
+
+predicted_ids = model.generate(**inputs)
+text = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+text = text[0].strip() if text else ''
+if text:
+    print(text)
+" "$1"
