@@ -10,7 +10,7 @@ can swap in any model or tool that reads audio and prints text.
 
 ## Requirements
 
-- Linux with Wayland (GNOME, Sway, Hyprland, etc.)
+- Linux (Wayland or X11)
 - PipeWire (default on most modern distros)
 - [ydotool](https://github.com/ReimuNotMoe/ydotool) for typing text
   (user must be in the `input` group — see Install)
