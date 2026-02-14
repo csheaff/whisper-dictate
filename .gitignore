@@ -1,5 +1,6 @@
 .venv/
 backends/.parakeet-venv/
+backends/.moonshine-venv/
 __pycache__/
 *.pyc
 *.wav

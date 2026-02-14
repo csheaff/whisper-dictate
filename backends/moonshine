@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Transcription backend using Moonshine Base (CPU-optimized, 61.5M params).
+#
+# Install:  make moonshine
+# Usage:    DICTATE_CMD="./backends/moonshine" dictate
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV="$SCRIPT_DIR/.moonshine-venv"
+MODEL="${MOONSHINE_MODEL:-UsefulSensors/moonshine-base}"
+
+exec "$VENV/bin/python3" -c "
+import sys
+import soundfile as sf
+from transformers import AutoProcessor, MoonshineForConditionalGeneration
+
+audio, sr = sf.read(sys.argv[1])
+
+processor = AutoProcessor.from_pretrained('$MODEL')
+model = MoonshineForConditionalGeneration.from_pretrained('$MODEL')
+
+inputs = processor(audio, sampling_rate=sr, return_tensors='pt')
+generated_ids = model.generate(**inputs, max_new_tokens=200)
+text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+if text:
+    print(text)
+" "$1"

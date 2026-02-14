@@ -27,7 +27,7 @@ venv: .venv/.done
 model:
 	.venv/bin/python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cuda', compute_type='float16')"
 
-# Install Parakeet backend (NVIDIA NeMo)
+# Install Parakeet backend (NVIDIA, via HuggingFace Transformers)
 parakeet: backends/.parakeet-venv/.done
 
 backends/.parakeet-venv/.done:
@@ -35,6 +35,15 @@ backends/.parakeet-venv/.done:
 	backends/.parakeet-venv/bin/pip install --upgrade pip
 	backends/.parakeet-venv/bin/pip install transformers torch soundfile librosa accelerate
 	touch backends/.parakeet-venv/.done
+
+# Install Moonshine backend (CPU-optimized, 61.5M params)
+moonshine: backends/.moonshine-venv/.done
+
+backends/.moonshine-venv/.done:
+	python3 -m venv backends/.moonshine-venv
+	backends/.moonshine-venv/bin/pip install --upgrade pip
+	backends/.moonshine-venv/bin/pip install transformers torch soundfile
+	touch backends/.moonshine-venv/.done
 
 test:
 	bats test/

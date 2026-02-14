@@ -69,19 +69,71 @@ bindsym $mod+d exec dictate
 2. Speak
 3. Press the shortcut again → transcribes and types the text at your cursor
 
-## Custom transcription backends
+## Backends
+
+Three backends are included. Each has a one-shot script (loads model per
+invocation) and a server mode (loads model once, keeps it in memory).
+
+### Whisper (default)
+
+The default backend uses [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
+Best with a GPU.
+
+```bash
+# One-shot (default, no extra setup needed)
+dictate
+
+# Server mode (faster — model stays in memory)
+transcribe-server start
+export DICTATE_CMD="$HOME/code/whisper-dictate/transcribe-server transcribe"
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `WHISPER_MODEL` | `base` | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
+| `WHISPER_LANG` | `en` | Language code |
+| `WHISPER_DEVICE` | `cuda` | `cuda` or `cpu` |
+| `WHISPER_COMPUTE` | `float16` | `float16` (GPU), `int8` or `float32` (CPU) |
+
+### Parakeet (GPU, best accuracy)
+
+[NVIDIA Parakeet CTC 1.1B](https://huggingface.co/nvidia/parakeet-ctc-1.1b)
+via HuggingFace Transformers. 1.1B params, excellent accuracy.
+
+```bash
+make parakeet
+
+# Server mode (recommended — 4.2GB model)
+backends/parakeet-server start
+export DICTATE_CMD="$HOME/code/whisper-dictate/backends/parakeet-server transcribe"
+```
+
+### Moonshine (CPU, lightweight)
+
+[Moonshine](https://huggingface.co/UsefulSensors/moonshine-base) by Useful
+Sensors. 61.5M params, purpose-built for CPU/edge inference. Beats Whisper
+models 28x its size.
+
+```bash
+make moonshine
+
+# One-shot (fine for this small model)
+export DICTATE_CMD="$HOME/code/whisper-dictate/backends/moonshine"
+
+# Or server mode
+backends/moonshine-server start
+export DICTATE_CMD="$HOME/code/whisper-dictate/backends/moonshine-server transcribe"
+```
+
+Set `MOONSHINE_MODEL=UsefulSensors/moonshine-tiny` for an even smaller 27M
+param model.
+
+### Custom backends
 
 Set `DICTATE_CMD` to any command that takes a WAV file path as its last
 argument and prints text to stdout:
 
 ```bash
-# whisper.cpp
-export DICTATE_CMD="whisper-cpp -m /path/to/model.bin -f"
-
-# Vosk
-export DICTATE_CMD="vosk-transcriber --input"
-
-# Any custom script
 export DICTATE_CMD="/path/to/my-transcriber"
 ```
 
@@ -90,37 +142,18 @@ Your command will be called as: `$DICTATE_CMD /path/to/recording.wav`
 It should print the transcribed text to stdout and exit. That's the only
 contract — use whatever model, language, or runtime you want.
 
-## Configuration
-
-When using the default faster-whisper backend, these environment variables
-apply:
-
-| Variable | Default | Description |
-|---|---|---|
-| `WHISPER_MODEL` | `base` | Model size: `tiny`, `base`, `small`, `medium`, `large-v3` |
-| `WHISPER_LANG` | `en` | Language code |
-| `WHISPER_DEVICE` | `cuda` | `cuda` for GPU, `cpu` for CPU |
-| `WHISPER_COMPUTE` | `float16` | `float16` for GPU, `int8` or `float32` for CPU |
-
-For example, to use the `small` model on CPU:
-
-```bash
-WHISPER_MODEL=small WHISPER_DEVICE=cpu WHISPER_COMPUTE=int8 dictate
-```
-
 ## How it works
 
 ```
-[hotkey] → pw-record starts → [hotkey] → pw-record stops
+[hotkey] → recording starts → [hotkey] → recording stops
                                             ↓
                                      $DICTATE_CMD audio.wav
                                             ↓
                                      ydotool type → text appears at cursor
 ```
 
-The `dictate` script is ~80 lines of bash. The `transcribe` script is the
-default backend (~15 lines of Python). No daemons, no services, no config
-files.
+The `dictate` script is ~80 lines of bash. Transcription backends are
+swappable. Server mode uses Unix sockets to keep models in memory.
 
 ## License
 

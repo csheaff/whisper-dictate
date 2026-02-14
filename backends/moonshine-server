@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Moonshine transcription server — keeps the model loaded in memory.
+#
+# Install:  make moonshine
+# Usage:
+#   backends/moonshine-server start   # start (loads model)
+#   backends/moonshine-server stop    # stop
+#   DICTATE_CMD="backends/moonshine-server transcribe" dictate
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV="$SCRIPT_DIR/.moonshine-venv"
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/moonshine.sock"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/moonshine-server.pid"
+MODEL="${MOONSHINE_MODEL:-UsefulSensors/moonshine-base}"
+
+case "${1:-}" in
+    start)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "Already running (PID $(cat "$PIDFILE"))"
+            exit 0
+        fi
+        echo "Starting moonshine server (loading $MODEL)..."
+        "$VENV/bin/python3" "$SCRIPT_DIR/moonshine-daemon.py" "$SOCK" "$MODEL" &
+        PID=$!
+        disown "$PID"
+        echo "$PID" > "$PIDFILE"
+        for i in $(seq 1 30); do
+            [ -S "$SOCK" ] && break
+            sleep 1
+        done
+        if [ -S "$SOCK" ]; then
+            echo "Ready (PID $PID)"
+        else
+            echo "Failed to start" >&2
+            exit 1
+        fi
+        ;;
+    stop)
+        if [ -f "$PIDFILE" ]; then
+            kill "$(cat "$PIDFILE")" 2>/dev/null || true
+            rm -f "$PIDFILE" "$SOCK"
+            echo "Stopped"
+        else
+            echo "Not running"
+        fi
+        ;;
+    transcribe)
+        if [ ! -S "$SOCK" ]; then
+            echo "Moonshine server not running. Start it with: backends/moonshine-server start" >&2
+            exit 1
+        fi
+        echo "$2" | socat - UNIX-CONNECT:"$SOCK"
+        ;;
+    *)
+        echo "Usage: moonshine-server {start|stop|transcribe <audio.wav>}" >&2
+        exit 1
+        ;;
+esac
