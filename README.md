@@ -8,6 +8,9 @@ Transcription is pluggable — ships with
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) by default, but you
 can swap in any model or tool that reads audio and prints text.
 
+> **Note:** This project is in early development — expect rough edges. If you
+> run into issues, please [open a bug](https://github.com/csheaff/talktype/issues).
+
 ## Requirements
 
 - Linux (Wayland or X11)
