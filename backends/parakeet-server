@@ -18,12 +18,16 @@ case "${1:-}" in
             echo "Already running (PID $(cat "$PIDFILE"))"
             exit 0
         fi
+        if [ ! -x "$VENV/bin/python3" ]; then
+            echo "Parakeet backend not installed. Run: make parakeet" >&2
+            exit 1
+        fi
+        rm -f "$PIDFILE" "$SOCK"
         echo "Starting parakeet server (loading model)..."
         "$VENV/bin/python3" "$SCRIPT_DIR/parakeet-daemon.py" "$SOCK" &
         PID=$!
         disown "$PID"
         echo "$PID" > "$PIDFILE"
-        # Wait for socket to appear
         for i in $(seq 1 60); do
             [ -S "$SOCK" ] && break
             sleep 1
@@ -45,10 +49,8 @@ case "${1:-}" in
         fi
         ;;
     transcribe)
-        # Called by talktype — sends audio path to the server, prints result
         if [ ! -S "$SOCK" ]; then
-            echo "Parakeet server not running. Start it with: backends/parakeet-server start" >&2
-            exit 1
+            "$0" start >&2 || exit 1
         fi
         echo "$2" | socat - UNIX-CONNECT:"$SOCK"
         ;;

@@ -14,10 +14,10 @@ can swap in any model or tool that reads audio and prints text.
 ## Requirements
 
 - Linux (Wayland or X11)
-- PipeWire (default on most modern distros)
+- Audio recorder: [ffmpeg](https://ffmpeg.org/) (preferred) or PipeWire (`pw-record`)
 - [ydotool](https://github.com/ReimuNotMoe/ydotool) for typing text
   (user must be in the `input` group — see Install)
-- [socat](https://linux.die.net/man/1/socat) (only needed for server mode)
+- [socat](https://linux.die.net/man/1/socat) (for server-backed transcription)
 
 For the default backend (faster-whisper):
 - NVIDIA GPU with CUDA (or use CPU mode — see Whisper backend options)
@@ -53,6 +53,22 @@ Then **reboot** for the group change to take effect.
 make model
 ```
 
+## Configuration
+
+talktype reads `~/.config/talktype/config` on startup (follows `$XDG_CONFIG_HOME`).
+This works everywhere — GNOME shortcuts, terminals, Sway, cron — no need to set
+environment variables in each context.
+
+```bash
+mkdir -p ~/.config/talktype
+cat > ~/.config/talktype/config << 'EOF'
+TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
+EOF
+```
+
+Any `TALKTYPE_*` variable can go in this file. Environment variables still work
+and are applied after the config file, so they override it.
+
 ## Setup
 
 Bind `talktype` to a keyboard shortcut:
@@ -75,21 +91,19 @@ bindsym $mod+d exec talktype
 
 ## Backends
 
-Three backends are included. Each has a one-shot script (loads model per
-invocation) and a server mode (loads model once, keeps it in memory).
+Three backends are included. Server backends auto-start on first use — the
+model loads once and stays in memory for fast subsequent transcriptions.
 
 ### Whisper (default)
 
-The default backend uses [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
-Best with a GPU.
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper). Best with a GPU.
+Works out of the box after `make install` with no config needed.
+
+For faster repeated use, switch to server mode in your config:
 
 ```bash
-# One-shot (default, no extra setup needed)
-talktype
-
-# Server mode (faster — model stays in memory)
-./transcribe-server start
-export TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
+# ~/.config/talktype/config
+TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
 ```
 
 | Variable | Default | Description |
@@ -106,10 +120,11 @@ via HuggingFace Transformers. 1.1B params, excellent accuracy.
 
 ```bash
 make parakeet
+```
 
-# Server mode (recommended — 4.2GB model)
-./backends/parakeet-server start
-export TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
+```bash
+# ~/.config/talktype/config
+TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
 ```
 
 ### Moonshine (CPU, lightweight)
@@ -119,17 +134,25 @@ Sensors. 61.5M params, purpose-built for CPU/edge inference.
 
 ```bash
 make moonshine
+```
 
-# One-shot (fine for this small model)
-export TALKTYPE_CMD="/path/to/talktype/backends/moonshine"
-
-# Or server mode
-./backends/moonshine-server start
-export TALKTYPE_CMD="/path/to/talktype/backends/moonshine-server transcribe"
+```bash
+# ~/.config/talktype/config
+TALKTYPE_CMD="/path/to/talktype/backends/moonshine-server transcribe"
 ```
 
 Set `MOONSHINE_MODEL=UsefulSensors/moonshine-tiny` for an even smaller 27M
 param model.
+
+### Manual server management
+
+The server starts automatically on first transcription. You can also manage
+it directly:
+
+```bash
+./backends/parakeet-server start   # start manually
+./backends/parakeet-server stop    # stop the server
+```
 
 ### Custom backends
 
@@ -137,7 +160,8 @@ Set `TALKTYPE_CMD` to any command that takes a WAV file path as its last
 argument and prints text to stdout:
 
 ```bash
-export TALKTYPE_CMD="/path/to/my-transcriber"
+# ~/.config/talktype/config
+TALKTYPE_CMD="/path/to/my-transcriber"
 ```
 
 Your command will be called as: `$TALKTYPE_CMD /path/to/recording.wav`

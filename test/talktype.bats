@@ -5,6 +5,7 @@
 # with simple mocks so we can test the control flow in isolation.
 
 setup() {
+    export TALKTYPE_CONFIG="/dev/null"
     export TALKTYPE_DIR="$BATS_TEST_TMPDIR/talktype"
     export TALKTYPE_CMD="$BATS_TEST_DIRNAME/mock-transcribe"
 
