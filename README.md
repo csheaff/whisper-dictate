@@ -17,7 +17,7 @@ can swap in any model or tool that reads audio and prints text.
 - [socat](https://linux.die.net/man/1/socat) (only needed for server mode)
 
 For the default backend (faster-whisper):
-- NVIDIA GPU with CUDA (or use CPU mode — see Configuration)
+- NVIDIA GPU with CUDA (or use CPU mode — see Whisper backend options)
 
 ## Install
 
@@ -85,8 +85,8 @@ Best with a GPU.
 talktype
 
 # Server mode (faster — model stays in memory)
-transcribe-server start
-export TALKTYPE_CMD="$HOME/code/talktype/transcribe-server transcribe"
+./transcribe-server start
+export TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
 ```
 
 | Variable | Default | Description |
@@ -105,25 +105,24 @@ via HuggingFace Transformers. 1.1B params, excellent accuracy.
 make parakeet
 
 # Server mode (recommended — 4.2GB model)
-backends/parakeet-server start
-export TALKTYPE_CMD="$HOME/code/talktype/backends/parakeet-server transcribe"
+./backends/parakeet-server start
+export TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
 ```
 
 ### Moonshine (CPU, lightweight)
 
 [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base) by Useful
-Sensors. 61.5M params, purpose-built for CPU/edge inference. Beats Whisper
-models 28x its size.
+Sensors. 61.5M params, purpose-built for CPU/edge inference.
 
 ```bash
 make moonshine
 
 # One-shot (fine for this small model)
-export TALKTYPE_CMD="$HOME/code/talktype/backends/moonshine"
+export TALKTYPE_CMD="/path/to/talktype/backends/moonshine"
 
 # Or server mode
-backends/moonshine-server start
-export TALKTYPE_CMD="$HOME/code/talktype/backends/moonshine-server transcribe"
+./backends/moonshine-server start
+export TALKTYPE_CMD="/path/to/talktype/backends/moonshine-server transcribe"
 ```
 
 Set `MOONSHINE_MODEL=UsefulSensors/moonshine-tiny` for an even smaller 27M
