@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Mock transcriber: ignores the audio file, prints fixed text
+echo "hello world"

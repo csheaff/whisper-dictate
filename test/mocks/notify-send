@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Mock notify-send: no-op
+exit 0

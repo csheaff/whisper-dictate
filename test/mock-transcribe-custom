@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Mock transcriber: outputs custom text to test DICTATE_CMD override
+echo "custom output"

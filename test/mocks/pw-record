@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Mock pw-record: write PID so tests can clean up, sleep in background
+trap 'exit 0' TERM
+sleep 300 &
+wait $!
