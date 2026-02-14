@@ -13,9 +13,15 @@
 #
 set -euo pipefail
 
+# ── Load user config (works from GNOME shortcuts, cron, etc.) ──
+TALKTYPE_CONFIG="${TALKTYPE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/talktype/config}"
+# shellcheck disable=SC1090
+[ -f "$TALKTYPE_CONFIG" ] && source "$TALKTYPE_CONFIG"
+
 TALKTYPE_DIR="${TALKTYPE_DIR:-${XDG_RUNTIME_DIR:-/tmp}/talktype}"
 PIDFILE="$TALKTYPE_DIR/rec.pid"
 AUDIOFILE="$TALKTYPE_DIR/rec.wav"
+NOTIFYFILE="$TALKTYPE_DIR/notify.id"
 
 mkdir -p "$TALKTYPE_DIR"
 
@@ -35,16 +41,33 @@ if [ -z "${TALKTYPE_CMD:-}" ]; then
     TALKTYPE_CMD="$VENV_DIR/bin/python3 $SCRIPT_DIR/transcribe $WHISPER_MODEL $WHISPER_LANG $WHISPER_DEVICE $WHISPER_COMPUTE"
 fi
 
+# ── Notification helper ──
+notify() {
+    local icon="$1" msg="$2"
+    local -a args=(-a TalkType -u critical -i "$icon" -p "TalkType" "$msg")
+    if [ -f "$NOTIFYFILE" ]; then
+        args+=(-r "$(cat "$NOTIFYFILE")")
+    fi
+    notify-send "${args[@]}" 2>/dev/null | head -1 > "$NOTIFYFILE" || true
+}
+
+notify_close() {
+    if [ -f "$NOTIFYFILE" ]; then
+        notify-send -a TalkType -r "$(cat "$NOTIFYFILE")" -e "TalkType" "" 2>/dev/null || true
+        rm -f "$NOTIFYFILE"
+    fi
+}
+
 # ── Check core dependencies ──
 check_deps() {
     local missing=()
     command -v ydotool    &>/dev/null || missing+=(ydotool)
-    command -v pw-record  &>/dev/null || missing+=(pipewire)
+    command -v ffmpeg &>/dev/null || command -v pw-record &>/dev/null || missing+=("ffmpeg or pipewire")
     command -v notify-send &>/dev/null || missing+=(libnotify-bin)
 
     if [ ${#missing[@]} -gt 0 ]; then
         echo "Missing: ${missing[*]}" >&2
-        notify-send -h string:x-canonical-private-synchronous:talktype -t 3000 -i dialog-error "TalkType" "Missing: ${missing[*]}" 2>/dev/null || true
+        notify-send -t 3000 -i dialog-error "TalkType" "Missing: ${missing[*]}" 2>/dev/null || true
         exit 1
     fi
 }
@@ -55,8 +78,11 @@ check_deps
 if [ -f "$PIDFILE" ]; then
     PID=$(cat "$PIDFILE")
     kill "$PID" 2>/dev/null || true
-    wait "$PID" 2>/dev/null || true
+    # Wait for recorder to finalize the file (not a child, so wait(1) won't work)
+    while kill -0 "$PID" 2>/dev/null; do sleep 0.05; done
     rm -f "$PIDFILE"
+
+    notify process-working "Transcribing..."
 
     # Run the transcription command with the audio file as last arg
     TEXT=$($TALKTYPE_CMD "$AUDIOFILE")
@@ -64,12 +90,14 @@ if [ -f "$PIDFILE" ]; then
     rm -f "$AUDIOFILE"
 
     if [ -z "$TEXT" ]; then
-        notify-send -h string:x-canonical-private-synchronous:talktype -t 1500 -i dialog-warning "TalkType" "No speech detected" 2>/dev/null || true
+        notify dialog-warning "No speech detected"
         exit 0
     fi
 
-    # Type text at cursor via ydotool (works on any Wayland compositor)
-    ydotool type -- "$TEXT"
+    notify_close
+
+    # Type text at cursor via ydotool
+    ydotool type --key-delay 50 -- "$TEXT"
 
 # ── Otherwise → start recording ──
 else
@@ -84,5 +112,5 @@ else
     PID=$!
     disown "$PID"
     echo "$PID" > "$PIDFILE"
-    notify-send -h string:x-canonical-private-synchronous:talktype -t 1500 -i audio-input-microphone "TalkType" "Listening..." 2>/dev/null || true
+    notify audio-input-microphone "Listening..."
 fi

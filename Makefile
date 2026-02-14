@@ -12,7 +12,7 @@ install: deps venv
 
 # Install system dependencies (requires sudo)
 deps:
-	sudo apt install -y ydotool pipewire libnotify-bin python3-venv socat
+	sudo apt install -y ydotool ffmpeg pipewire libnotify-bin python3-venv socat
 
 # Create Python venv with faster-whisper (default backend)
 venv: .venv/.done

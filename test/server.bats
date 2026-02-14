@@ -73,12 +73,12 @@ start_mock_daemon() {
 
 # ── Server wrapper logic ──
 
-@test "transcribe fails with helpful message when server not running" {
-    # Test each server script's transcribe command without a running server
+@test "transcribe auto-start fails gracefully when backend not installed" {
+    # With no venv installed, transcribe should attempt auto-start and fail
     for server in transcribe-server backends/parakeet-server backends/moonshine-server; do
         run "$REPO_DIR/$server" transcribe /tmp/test.wav
         [ "$status" -eq 1 ]
-        [[ "$output" == *"not running"* ]]
+        [[ "$output" == *"not installed"* ]]
     done
 }
 

@@ -22,6 +22,11 @@ case "${1:-}" in
             echo "Already running (PID $(cat "$PIDFILE"))"
             exit 0
         fi
+        if [ ! -x "$VENV/bin/python3" ]; then
+            echo "Whisper backend not installed. Run: make install" >&2
+            exit 1
+        fi
+        rm -f "$PIDFILE" "$SOCK"
         echo "Starting whisper server (loading $WHISPER_MODEL model)..."
         "$VENV/bin/python3" "$SCRIPT_DIR/whisper-daemon.py" "$SOCK" "$WHISPER_MODEL" "$WHISPER_LANG" "$WHISPER_DEVICE" "$WHISPER_COMPUTE" &
         PID=$!
@@ -49,8 +54,7 @@ case "${1:-}" in
         ;;
     transcribe)
         if [ ! -S "$SOCK" ]; then
-            echo "Whisper server not running. Start it with: transcribe-server start" >&2
-            exit 1
+            "$0" start >&2 || exit 1
         fi
         echo "$2" | socat - UNIX-CONNECT:"$SOCK"
         ;;

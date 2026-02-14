@@ -3,6 +3,7 @@ import os
 import sys
 import socket
 import signal
+import torch
 import soundfile as sf
 from transformers import AutoProcessor, AutoModelForCTC
 
@@ -17,11 +18,13 @@ print("Model loaded.", flush=True)
 
 def transcribe(audio_path):
     audio, sr = sf.read(audio_path)
-    inputs = processor(audio, sampling_rate=sr)
-    inputs.to(model.device, dtype=model.dtype)
-    predicted_ids = model.generate(**inputs)
-    texts = processor.batch_decode(predicted_ids, skip_special_tokens=True)
-    return texts[0].strip() if texts else ""
+    inputs = processor(audio, sampling_rate=sr, return_tensors="pt")
+    inputs = inputs.to(model.device, dtype=model.dtype)
+    with torch.no_grad():
+        logits = model(**inputs).logits
+    predicted_ids = torch.argmax(logits, dim=-1)
+    text = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+    return text[0].strip() if text else ""
 
 
 def cleanup(*_):
