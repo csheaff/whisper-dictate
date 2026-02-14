@@ -14,6 +14,7 @@ can swap in any model or tool that reads audio and prints text.
 - PipeWire (default on most modern distros)
 - [ydotool](https://github.com/ReimuNotMoe/ydotool) for typing text
   (user must be in the `input` group — see Install)
+- [socat](https://linux.die.net/man/1/socat) (only needed for server mode)
 
 For the default backend (faster-whisper):
 - NVIDIA GPU with CUDA (or use CPU mode — see Configuration)
