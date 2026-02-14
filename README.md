@@ -62,7 +62,7 @@ environment variables in each context.
 ```bash
 mkdir -p ~/.config/talktype
 cat > ~/.config/talktype/config << 'EOF'
-TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
+TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
 EOF
 ```
 
@@ -113,10 +113,11 @@ TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
 | `WHISPER_DEVICE` | `cuda` | `cuda` or `cpu` |
 | `WHISPER_COMPUTE` | `float16` | `float16` (GPU), `int8` or `float32` (CPU) |
 
-### Parakeet (GPU, best accuracy)
+### Parakeet (GPU, best word accuracy)
 
 [NVIDIA Parakeet CTC 1.1B](https://huggingface.co/nvidia/parakeet-ctc-1.1b)
-via HuggingFace Transformers. 1.1B params, excellent accuracy.
+via HuggingFace Transformers. 1.1B params, excellent word accuracy.
+Note: CTC model — outputs lowercase text without punctuation.
 
 ```bash
 make parakeet
