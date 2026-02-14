@@ -1,0 +1,28 @@
+name: Security
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit whisper dependencies
+        run: |
+          python3 -m venv /tmp/audit-venv
+          /tmp/audit-venv/bin/pip install --upgrade pip
+          /tmp/audit-venv/bin/pip install faster-whisper pip-audit
+          /tmp/audit-venv/bin/pip-audit
+
+      - name: Audit moonshine dependencies
+        run: |
+          python3 -m venv /tmp/audit-moonshine
+          /tmp/audit-moonshine/bin/pip install --upgrade pip
+          /tmp/audit-moonshine/bin/pip install transformers torch soundfile pip-audit
+          /tmp/audit-moonshine/bin/pip-audit

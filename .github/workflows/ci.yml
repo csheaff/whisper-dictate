@@ -36,28 +36,3 @@ jobs:
 
       - name: Run unit tests
         run: bats test/talktype.bats
-
-  security:
-    name: Security
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install pip-audit
-        run: pip install pip-audit
-
-      - name: Audit whisper dependencies
-        run: |
-          python3 -m venv /tmp/audit-venv
-          /tmp/audit-venv/bin/pip install --upgrade pip
-          /tmp/audit-venv/bin/pip install faster-whisper
-          /tmp/audit-venv/bin/pip install pip-audit
-          /tmp/audit-venv/bin/pip-audit
-
-      - name: Audit moonshine dependencies
-        run: |
-          python3 -m venv /tmp/audit-moonshine
-          /tmp/audit-moonshine/bin/pip install --upgrade pip
-          /tmp/audit-moonshine/bin/pip install transformers torch soundfile
-          /tmp/audit-moonshine/bin/pip install pip-audit
-          /tmp/audit-moonshine/bin/pip-audit
