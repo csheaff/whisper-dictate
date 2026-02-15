@@ -6,7 +6,7 @@ app to keep running — just a keyboard shortcut.
 
 - **Pluggable backends** — swap transcription models without changing anything else
 - **Works everywhere** — GNOME, Sway, Hyprland, i3, X11
-- **~100 lines of bash** — easy to read, easy to hack on
+- **~160 lines of bash** — easy to read, easy to hack on
 
 Ships with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) by
 default, plus an optional [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base)
@@ -19,14 +19,11 @@ backend for CPU. Or bring your own — anything that reads a WAV and prints text
 
 - Linux (Wayland or X11)
 - Audio recorder: [ffmpeg](https://ffmpeg.org/) (preferred) or PipeWire (`pw-record`)
-- Typing tool (one of):
+- Typing tool (auto-detected, best available is used):
   - [wtype](https://github.com/atx/wtype) — Wayland (Sway, Hyprland; not GNOME)
-  - [xdotool](https://github.com/jordansissel/xdotool) — X11 and XWayland (works on GNOME)
-  - [ydotool](https://github.com/ReimuNotMoe/ydotool) ≥1.0 + `ydotoold` — Wayland & X11
-
-  > **Warning:** ydotool **without** `ydotoold` leaks a kernel input device on
-  > every keystroke, which can crash your system. talktype will not use bare
-  > ydotool automatically — you must opt in via `TALKTYPE_TYPE_CMD=ydotool`.
+  - [ydotool](https://github.com/ReimuNotMoe/ydotool) + `ydotoold` — Wayland & X11 (preferred with daemon)
+  - [xdotool](https://github.com/jordansissel/xdotool) — X11 only (not Wayland)
+  - ydotool without daemon — last resort, with warning
 - [socat](https://linux.die.net/man/1/socat) (for server-backed transcription)
 
 For the default backend (faster-whisper):
