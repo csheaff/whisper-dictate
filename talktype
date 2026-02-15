@@ -93,7 +93,7 @@ type_text() {
     if command -v ydotool &>/dev/null && pgrep -x ydotoold &>/dev/null; then
         ydotool type --key-delay 20 -- "$text" && return
     fi
-    if [ -n "${DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
+    if [ -n "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
         xdotool type -- "$text" && return
     fi
     if command -v ydotool &>/dev/null; then
