@@ -205,7 +205,7 @@ start_fake_recording() {
     [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"hello world"* ]]
 }
 
-@test "auto mode refuses bare ydotool without daemon" {
+@test "bare ydotool is used as last resort with warning" {
     start_fake_recording
     unset WAYLAND_DISPLAY
     unset DISPLAY
@@ -226,18 +226,13 @@ start_fake_recording() {
     PATH="$sparse"
 
     run "$TALKTYPE"
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"no safe typing tool"* ]]
-}
-
-@test "explicit TALKTYPE_TYPE_CMD=ydotool warns without daemon" {
-    start_fake_recording
-    export TALKTYPE_TYPE_CMD=ydotool
-
-    run "$TALKTYPE"
     [ "$status" -eq 0 ]
 
+    # Should have typed via ydotool
+    [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"hello world"* ]]
+    # Warning file should exist
     [ -f "$TALKTYPE_DIR/.ydotool-warned" ]
+    # Warning should be in output
     [[ "$output" == *"ydotool without ydotoold"* ]]
 }
 

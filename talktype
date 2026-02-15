@@ -96,14 +96,11 @@ type_text() {
     if [ -n "${DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
         xdotool type -- "$text" && return
     fi
-    # Bare ydotool (without ydotoold) leaks a kernel input device per
-    # invocation, which can crash the system.  Refuse to use it in auto
-    # mode — the user must opt in via TALKTYPE_TYPE_CMD=ydotool.
-    echo "Error: no safe typing tool found." >&2
-    echo "  Install xdotool (apt install xdotool), or" >&2
-    echo "  install ydotool ≥1.0 and run ydotoold, or" >&2
-    echo "  set TALKTYPE_TYPE_CMD=ydotool to accept the risk." >&2
-    notify-send -t 5000 -i dialog-error "TalkType" "No safe typing tool — see terminal for details" 2>/dev/null || true
+    if command -v ydotool &>/dev/null; then
+        warn_ydotool_no_daemon
+        ydotool type --key-delay 20 -- "$text" && return
+    fi
+    echo "Error: no typing tool found (install wtype, ydotool, or xdotool)" >&2
     return 1
 }
 
