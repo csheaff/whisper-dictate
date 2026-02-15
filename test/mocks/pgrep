@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mock pgrep: always report no matching process (exit 1)
+# Override MOCK_PGREP_EXIT=0 in tests that need ydotoold detection
+exit "${MOCK_PGREP_EXIT:-1}"

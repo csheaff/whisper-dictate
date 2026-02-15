@@ -9,7 +9,7 @@
 # Transcription is pluggable: set TALKTYPE_CMD to any command that
 # takes a WAV file path as its last argument and prints text to stdout.
 #
-# Requires: ydotool, pw-record (PipeWire)
+# Requires: wtype/ydotool/xdotool, ffmpeg/pw-record
 #
 set -euo pipefail
 
@@ -58,10 +58,61 @@ notify_close() {
     fi
 }
 
+# ── Typing tool selection ──
+warn_ydotool_no_daemon() {
+    local warnfile="$TALKTYPE_DIR/.ydotool-warned"
+    [ -f "$warnfile" ] && return
+    touch "$warnfile"
+    echo "Warning: ydotool without ydotoold leaks virtual input devices (see issue #7). Install wtype (Wayland) or run ydotoold." >&2
+    notify-send -t 5000 -i dialog-warning "TalkType" "ydotool without daemon — may leak input devices" 2>/dev/null || true
+}
+
+type_text() {
+    local text="$1"
+    local cmd="${TALKTYPE_TYPE_CMD:-auto}"
+
+    # Explicit tool — use it directly
+    if [ "$cmd" != "auto" ]; then
+        if [ "$cmd" = "ydotool" ] && ! pgrep -x ydotoold &>/dev/null; then
+            warn_ydotool_no_daemon
+        fi
+        case "$cmd" in
+            wtype)    wtype -- "$text" ;;
+            ydotool)  ydotool type --key-delay 20 -- "$text" ;;
+            xdotool)  xdotool type -- "$text" ;;
+            *)        $cmd "$text" ;;
+        esac
+        return
+    fi
+
+    # Auto-detect: try each safe tool, fall through on failure
+    # (wtype may be installed but unsupported by the compositor)
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wtype &>/dev/null; then
+        wtype -- "$text" 2>/dev/null && return
+    fi
+    if command -v ydotool &>/dev/null && pgrep -x ydotoold &>/dev/null; then
+        ydotool type --key-delay 20 -- "$text" && return
+    fi
+    if [ -n "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
+        xdotool type -- "$text" && return
+    fi
+    if command -v ydotool &>/dev/null; then
+        warn_ydotool_no_daemon
+        ydotool type --key-delay 20 -- "$text" && return
+    fi
+    echo "Error: no typing tool found (install wtype, ydotool, or xdotool)" >&2
+    return 1
+}
+
 # ── Check core dependencies ──
 check_deps() {
     local missing=()
-    command -v ydotool    &>/dev/null || missing+=(ydotool)
+    local type_cmd="${TALKTYPE_TYPE_CMD:-auto}"
+    if [ "$type_cmd" = "auto" ]; then
+        command -v wtype &>/dev/null || command -v ydotool &>/dev/null || command -v xdotool &>/dev/null || missing+=("wtype, ydotool, or xdotool")
+    else
+        command -v "$type_cmd" &>/dev/null || missing+=("$type_cmd")
+    fi
     command -v ffmpeg &>/dev/null || command -v pw-record &>/dev/null || missing+=("ffmpeg or pipewire")
     command -v notify-send &>/dev/null || missing+=(libnotify-bin)
 
@@ -96,8 +147,8 @@ if [ -f "$PIDFILE" ]; then
 
     notify_close
 
-    # Type text at cursor via ydotool
-    ydotool type --key-delay 20 -- "$TEXT"
+    # Type text at cursor
+    type_text "$TEXT"
 
 # ── Otherwise → start recording ──
 else

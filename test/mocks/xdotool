@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Mock xdotool: log the command and args
+echo "$@" >> "$TALKTYPE_DIR/xdotool.log"

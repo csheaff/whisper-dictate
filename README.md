@@ -6,12 +6,11 @@ app to keep running — just a keyboard shortcut.
 
 - **Pluggable backends** — swap transcription models without changing anything else
 - **Works everywhere** — GNOME, Sway, Hyprland, i3, X11
-- **~100 lines of bash** — easy to read, easy to hack on
+- **~160 lines of bash** — easy to read, easy to hack on
 
 Ships with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) by
-default, plus optional [Parakeet](https://huggingface.co/nvidia/parakeet-ctc-1.1b)
-and [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base) backends.
-Or bring your own — anything that reads a WAV and prints text works.
+default, plus an optional [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base)
+backend for CPU. Or bring your own — anything that reads a WAV and prints text works.
 
 > **Note:** This project is in early development — expect rough edges. If you
 > run into issues, please [open a bug](https://github.com/csheaff/talktype/issues).
@@ -20,8 +19,11 @@ Or bring your own — anything that reads a WAV and prints text works.
 
 - Linux (Wayland or X11)
 - Audio recorder: [ffmpeg](https://ffmpeg.org/) (preferred) or PipeWire (`pw-record`)
-- [ydotool](https://github.com/ReimuNotMoe/ydotool) for typing text
-  (user must be in the `input` group — see Install)
+- Typing tool (auto-detected, best available is used):
+  - [wtype](https://github.com/atx/wtype) — Wayland (Sway, Hyprland; not GNOME)
+  - [ydotool](https://github.com/ReimuNotMoe/ydotool) + `ydotoold` — Wayland & X11 (preferred with daemon)
+  - [xdotool](https://github.com/jordansissel/xdotool) — X11 only (not Wayland)
+  - ydotool without daemon — last resort, with warning
 - [socat](https://linux.die.net/man/1/socat) (for server-backed transcription)
 
 For the default backend (faster-whisper):
@@ -36,11 +38,13 @@ make install
 ```
 
 This will:
-1. Install system packages (`ydotool`, etc.)
+1. Install system packages (`wtype`, `ydotool`, etc.)
 2. Create a Python venv with `faster-whisper`
 3. Symlink `talktype` into `~/.local/bin/`
 
 ### ydotool permissions
+
+> **Note:** Only needed if you use ydotool. If you use wtype (Wayland) or xdotool (X11), skip this.
 
 `ydotool` needs access to `/dev/uinput`. Add yourself to the `input` group:
 
@@ -74,6 +78,10 @@ EOF
 Any `TALKTYPE_*` variable can go in this file. Environment variables still work
 and are applied after the config file, so they override it.
 
+Set `TALKTYPE_TYPE_CMD` to control which typing tool is used (`auto`, `wtype`,
+`ydotool`, `xdotool`, or any custom command). Default is `auto`, which picks
+the best available tool: wtype (Wayland) → ydotool+daemon → xdotool (X11).
+
 ## Setup
 
 Bind `talktype` to a keyboard shortcut:
@@ -96,8 +104,8 @@ bindsym $mod+d exec talktype
 
 ## Backends
 
-Three backends are included. Server backends auto-start on first use — the
-model loads once and stays in memory for fast subsequent transcriptions.
+Server backends auto-start on first use — the model loads once and stays in
+memory for fast subsequent transcriptions.
 
 ### Whisper (default)
 
@@ -118,21 +126,6 @@ TALKTYPE_CMD="/path/to/talktype/transcribe-server transcribe"
 | `WHISPER_DEVICE` | `cuda` | `cuda` or `cpu` |
 | `WHISPER_COMPUTE` | `float16` | `float16` (GPU), `int8` or `float32` (CPU) |
 
-### Parakeet (GPU, best word accuracy)
-
-[NVIDIA Parakeet CTC 1.1B](https://huggingface.co/nvidia/parakeet-ctc-1.1b)
-via HuggingFace Transformers. 1.1B params, excellent word accuracy.
-Note: CTC model — outputs lowercase text without punctuation.
-
-```bash
-make parakeet
-```
-
-```bash
-# ~/.config/talktype/config
-TALKTYPE_CMD="/path/to/talktype/backends/parakeet-server transcribe"
-```
-
 ### Moonshine (CPU, lightweight)
 
 [Moonshine](https://huggingface.co/UsefulSensors/moonshine-base) by Useful
@@ -150,14 +143,14 @@ TALKTYPE_CMD="/path/to/talktype/backends/moonshine-server transcribe"
 Set `MOONSHINE_MODEL=UsefulSensors/moonshine-tiny` for an even smaller 27M
 param model.
 
-### Manual server management
+### Server management
 
 The server starts automatically on first transcription. You can also manage
 it directly:
 
 ```bash
-./backends/parakeet-server start   # start manually
-./backends/parakeet-server stop    # stop the server
+./transcribe-server start   # start manually
+./transcribe-server stop    # stop the server
 ```
 
 ### Custom backends
@@ -182,10 +175,10 @@ contract — use whatever model, language, or runtime you want.
                                             ↓
                                      $TALKTYPE_CMD audio.wav
                                             ↓
-                                     ydotool type → text appears at cursor
+                                     type_text → text appears at cursor
 ```
 
-The `talktype` script is ~80 lines of bash. Transcription backends are
+The `talktype` script is ~160 lines of bash. Transcription backends are
 swappable. Server mode uses Unix sockets to keep models in memory.
 
 ## License
