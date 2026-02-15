@@ -81,6 +81,9 @@ type_text() {
         elif command -v ydotool &>/dev/null; then
             warn_ydotool_no_daemon
             cmd=ydotool
+        else
+            echo "Error: no typing tool found (install wtype, ydotool, or xdotool)" >&2
+            return 1
         fi
     fi
 

@@ -43,9 +43,9 @@ python3 -m py_compile transcribe whisper-daemon.py backends/*-daemon.py
 
 ## Architecture
 
-**Core flow:** hotkey → `talktype` (Bash) → record audio (ffmpeg/pw-record) → call `$TALKTYPE_CMD` with WAV path → type result via ydotool.
+**Core flow:** hotkey → `talktype` (Bash) → record audio (ffmpeg/pw-record) → call `$TALKTYPE_CMD` with WAV path → type result via `type_text` (wtype/ydotool/xdotool).
 
-**Main script** (`talktype`, ~116 lines Bash): manages recording state via PID file (`$TALKTYPE_DIR/rec.pid`), sends desktop notifications, delegates transcription to `$TALKTYPE_CMD`.
+**Main script** (`talktype`, ~160 lines Bash): manages recording state via PID file (`$TALKTYPE_DIR/rec.pid`), sends desktop notifications, delegates transcription to `$TALKTYPE_CMD`.
 
 **Backend pattern — two modes per backend:**
 - **Direct invocation** (`transcribe`, `backends/parakeet`, `backends/moonshine`): Python scripts that load model, transcribe, exit. Simple but slow (model reload each time).

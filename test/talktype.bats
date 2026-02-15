@@ -192,6 +192,48 @@ start_fake_recording() {
     [[ "$(cat "$TALKTYPE_DIR/xdotool.log")" == *"hello world"* ]]
 }
 
+@test "ydotool is preferred when ydotoold is running" {
+    start_fake_recording
+    unset WAYLAND_DISPLAY
+    export MOCK_PGREP_EXIT=0
+
+    run "$TALKTYPE"
+    [ "$status" -eq 0 ]
+
+    [ -f "$TALKTYPE_DIR/ydotool.log" ]
+    [ ! -f "$TALKTYPE_DIR/wtype.log" ]
+    [[ "$(cat "$TALKTYPE_DIR/ydotool.log")" == *"hello world"* ]]
+}
+
+@test "bare ydotool warns about missing daemon once per session" {
+    start_fake_recording
+    unset WAYLAND_DISPLAY
+    unset DISPLAY
+
+    # Remove wtype and xdotool from PATH so only bare ydotool remains
+    local sparse="$BATS_TEST_TMPDIR/bare_ydotool"
+    mkdir -p "$sparse"
+    for mock in "$BATS_TEST_DIRNAME"/mocks/*; do
+        name=$(basename "$mock")
+        [ "$name" = "wtype" ] && continue
+        [ "$name" = "xdotool" ] && continue
+        ln -sf "$mock" "$sparse/$name"
+    done
+    for cmd in bash mkdir cat kill sleep echo rm touch; do
+        local path
+        path=$(command -v "$cmd" 2>/dev/null) && ln -sf "$path" "$sparse/$cmd"
+    done
+    PATH="$sparse"
+
+    run "$TALKTYPE"
+    [ "$status" -eq 0 ]
+
+    # Warning file should exist
+    [ -f "$TALKTYPE_DIR/.ydotool-warned" ]
+    # Warning should be in stderr (captured in output by bats)
+    [[ "$output" == *"ydotool without ydotoold"* ]]
+}
+
 # ── Dependency checking ──
 
 @test "fails when no typing tool is available" {
@@ -200,7 +242,8 @@ start_fake_recording() {
     mkdir -p "$sparse"
     ln -sf "$BATS_TEST_DIRNAME/mocks/pw-record" "$sparse/pw-record"
     ln -sf "$BATS_TEST_DIRNAME/mocks/notify-send" "$sparse/notify-send"
-    for cmd in bash mkdir cat kill sleep echo rm pgrep; do
+    ln -sf "$BATS_TEST_DIRNAME/mocks/pgrep" "$sparse/pgrep"
+    for cmd in bash mkdir cat kill sleep echo rm; do
         local path
         path=$(command -v "$cmd" 2>/dev/null) && ln -sf "$path" "$sparse/$cmd"
     done

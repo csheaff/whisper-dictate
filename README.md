@@ -193,7 +193,7 @@ contract — use whatever model, language, or runtime you want.
                                      type_text → text appears at cursor
 ```
 
-The `talktype` script is ~80 lines of bash. Transcription backends are
+The `talktype` script is ~160 lines of bash. Transcription backends are
 swappable. Server mode uses Unix sockets to keep models in memory.
 
 ## License
