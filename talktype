@@ -71,28 +71,34 @@ type_text() {
     local text="$1"
     local cmd="${TALKTYPE_TYPE_CMD:-auto}"
 
-    if [ "$cmd" = "auto" ]; then
-        if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wtype &>/dev/null; then
-            cmd=wtype
-        elif command -v ydotool &>/dev/null && pgrep -x ydotoold &>/dev/null; then
-            cmd=ydotool
-        elif [ -n "${DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
-            cmd=xdotool
-        elif command -v ydotool &>/dev/null; then
-            warn_ydotool_no_daemon
-            cmd=ydotool
-        else
-            echo "Error: no typing tool found (install wtype, ydotool, or xdotool)" >&2
-            return 1
-        fi
+    # Explicit tool — use it directly
+    if [ "$cmd" != "auto" ]; then
+        case "$cmd" in
+            wtype)    wtype -- "$text" ;;
+            ydotool)  ydotool type --key-delay 20 -- "$text" ;;
+            xdotool)  xdotool type -- "$text" ;;
+            *)        $cmd "$text" ;;
+        esac
+        return
     fi
 
-    case "$cmd" in
-        wtype)    wtype -- "$text" ;;
-        ydotool)  ydotool type --key-delay 20 -- "$text" ;;
-        xdotool)  xdotool type -- "$text" ;;
-        *)        $cmd "$text" ;;
-    esac
+    # Auto-detect: try each tool, fall through on failure
+    # (wtype may be installed but unsupported by the compositor)
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wtype &>/dev/null; then
+        wtype -- "$text" 2>/dev/null && return
+    fi
+    if command -v ydotool &>/dev/null && pgrep -x ydotoold &>/dev/null; then
+        ydotool type --key-delay 20 -- "$text" && return
+    fi
+    if [ -n "${DISPLAY:-}" ] && command -v xdotool &>/dev/null; then
+        xdotool type -- "$text" && return
+    fi
+    if command -v ydotool &>/dev/null; then
+        warn_ydotool_no_daemon
+        ydotool type --key-delay 20 -- "$text" && return
+    fi
+    echo "Error: no typing tool found (install wtype, ydotool, or xdotool)" >&2
+    return 1
 }
 
 # ── Check core dependencies ──
