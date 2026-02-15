@@ -30,7 +30,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y bats
 
       - name: Install test dependencies
-        run: sudo apt-get install -y ydotool pipewire libnotify-bin socat
+        run: sudo apt-get install -y wtype ydotool pipewire libnotify-bin socat
 
       - name: Run tests
         run: bats test/talktype.bats test/server.bats

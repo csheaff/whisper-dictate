@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Mock wtype: log the command and args
+echo "$@" >> "$TALKTYPE_DIR/wtype.log"

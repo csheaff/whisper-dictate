@@ -20,8 +20,10 @@ Or bring your own — anything that reads a WAV and prints text works.
 
 - Linux (Wayland or X11)
 - Audio recorder: [ffmpeg](https://ffmpeg.org/) (preferred) or PipeWire (`pw-record`)
-- [ydotool](https://github.com/ReimuNotMoe/ydotool) for typing text
-  (user must be in the `input` group — see Install)
+- Typing tool (one of):
+  - [wtype](https://github.com/atx/wtype) — recommended for Wayland, no daemon needed
+  - [ydotool](https://github.com/ReimuNotMoe/ydotool) + `ydotoold` — Wayland & X11
+  - [xdotool](https://github.com/jordansissel/xdotool) — X11 only
 - [socat](https://linux.die.net/man/1/socat) (for server-backed transcription)
 
 For the default backend (faster-whisper):
@@ -36,11 +38,13 @@ make install
 ```
 
 This will:
-1. Install system packages (`ydotool`, etc.)
+1. Install system packages (`wtype`, `ydotool`, etc.)
 2. Create a Python venv with `faster-whisper`
 3. Symlink `talktype` into `~/.local/bin/`
 
 ### ydotool permissions
+
+> **Note:** Only needed if you use ydotool. If you use wtype (Wayland) or xdotool (X11), skip this.
 
 `ydotool` needs access to `/dev/uinput`. Add yourself to the `input` group:
 
@@ -73,6 +77,10 @@ EOF
 
 Any `TALKTYPE_*` variable can go in this file. Environment variables still work
 and are applied after the config file, so they override it.
+
+Set `TALKTYPE_TYPE_CMD` to control which typing tool is used (`auto`, `wtype`,
+`ydotool`, `xdotool`, or any custom command). Default is `auto`, which picks
+the best available tool: wtype (Wayland) → ydotool+daemon → xdotool (X11) → ydotool (bare, with warning).
 
 ## Setup
 
@@ -182,7 +190,7 @@ contract — use whatever model, language, or runtime you want.
                                             ↓
                                      $TALKTYPE_CMD audio.wav
                                             ↓
-                                     ydotool type → text appears at cursor
+                                     type_text → text appears at cursor
 ```
 
 The `talktype` script is ~80 lines of bash. Transcription backends are
