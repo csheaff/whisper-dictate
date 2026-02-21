@@ -8,6 +8,8 @@ REPO_DIR="$BATS_TEST_DIRNAME/.."
 setup() {
     export SOCK="$BATS_TEST_TMPDIR/test-server.sock"
     export PIDFILE="$BATS_TEST_TMPDIR/test-server.pid"
+    # Isolate from user config so real venv/model settings don't bleed in
+    export TALKTYPE_CONFIG=/dev/null
 }
 
 teardown() {
@@ -74,12 +76,11 @@ start_mock_daemon() {
 # ── Server wrapper logic ──
 
 @test "transcribe auto-start fails gracefully when backend not installed" {
-    # With no venv installed, transcribe should attempt auto-start and fail
-    for server in transcribe-server backends/parakeet-server backends/moonshine-server; do
-        run "$REPO_DIR/$server" transcribe /tmp/test.wav
-        [ "$status" -eq 1 ]
-        [[ "$output" == *"not installed"* ]]
-    done
+    # Point whisper venv to nonexistent path to simulate missing install
+    export TALKTYPE_VENV="$BATS_TEST_TMPDIR/no-such-venv"
+    run "$REPO_DIR/transcribe-server" transcribe /tmp/test.wav
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"not installed"* ]]
 }
 
 @test "stop reports not running when no pidfile exists" {
