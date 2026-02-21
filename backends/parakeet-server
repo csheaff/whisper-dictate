@@ -8,6 +8,12 @@
 #   TALKTYPE_CMD="backends/parakeet-server transcribe" talktype
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Source user config so env vars are available even when invoked directly.
+TALKTYPE_CONFIG="${TALKTYPE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/talktype/config}"
+# shellcheck disable=SC1090
+[ -f "$TALKTYPE_CONFIG" ] && source "$TALKTYPE_CONFIG"
+
 VENV="$SCRIPT_DIR/.parakeet-venv"
 SOCK="${XDG_RUNTIME_DIR:-/tmp}/parakeet.sock"
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/parakeet-server.pid"
@@ -28,7 +34,7 @@ case "${1:-}" in
         PID=$!
         disown "$PID"
         echo "$PID" > "$PIDFILE"
-        for i in $(seq 1 60); do
+        for _ in $(seq 1 60); do
             [ -S "$SOCK" ] && break
             sleep 1
         done
@@ -49,10 +55,13 @@ case "${1:-}" in
         fi
         ;;
     transcribe)
+        if [ -S "$SOCK" ] && [ -f "$PIDFILE" ] && ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            rm -f "$PIDFILE" "$SOCK"
+        fi
         if [ ! -S "$SOCK" ]; then
             "$0" start >&2 || exit 1
         fi
-        echo "$2" | socat - UNIX-CONNECT:"$SOCK"
+        echo "$2" | socat -T 30 - UNIX-CONNECT:"$SOCK"
         ;;
     *)
         echo "Usage: parakeet-server {start|stop|transcribe <audio.wav>}" >&2
