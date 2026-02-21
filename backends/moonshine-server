@@ -56,10 +56,13 @@ case "${1:-}" in
         fi
         ;;
     transcribe)
+        if [ -S "$SOCK" ] && [ -f "$PIDFILE" ] && ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            rm -f "$PIDFILE" "$SOCK"
+        fi
         if [ ! -S "$SOCK" ]; then
             "$0" start >&2 || exit 1
         fi
-        echo "$2" | socat - UNIX-CONNECT:"$SOCK"
+        echo "$2" | socat -T 30 - UNIX-CONNECT:"$SOCK"
         ;;
     *)
         echo "Usage: moonshine-server {start|stop|transcribe <audio.wav>}" >&2
