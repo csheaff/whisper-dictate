@@ -61,13 +61,20 @@ case "${1:-}" in
         ;;
     transcribe)
         # Ensure daemon is alive (not just a stale socket from a crash)
-        if [ -S "$SOCK" ] && [ -f "$PIDFILE" ] && ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+        if [ -f "$PIDFILE" ] && ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
             rm -f "$PIDFILE" "$SOCK"
         fi
         if [ ! -S "$SOCK" ]; then
             "$0" start >&2 || exit 1
         fi
-        echo "$2" | socat -T 30 - UNIX-CONNECT:"$SOCK"
+        TEXT=$(echo "$2" | socat -t 120 -T 120 - UNIX-CONNECT:"$SOCK" 2>/dev/null) || true
+        if [ -z "$TEXT" ] && [ -f "$PIDFILE" ] && ! kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            # Daemon died during transcription — restart and retry once
+            rm -f "$PIDFILE" "$SOCK"
+            "$0" start >&2 || exit 1
+            TEXT=$(echo "$2" | socat -t 120 -T 120 - UNIX-CONNECT:"$SOCK" 2>/dev/null) || true
+        fi
+        printf '%s' "$TEXT"
         ;;
     *)
         echo "Usage: transcribe-server {start|stop|transcribe <audio.wav>}" >&2

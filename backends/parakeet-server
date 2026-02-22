@@ -61,7 +61,7 @@ case "${1:-}" in
         if [ ! -S "$SOCK" ]; then
             "$0" start >&2 || exit 1
         fi
-        echo "$2" | socat -T 30 - UNIX-CONNECT:"$SOCK"
+        echo "$2" | socat -t 120 -T 120 - UNIX-CONNECT:"$SOCK"
         ;;
     *)
         echo "Usage: parakeet-server {start|stop|transcribe <audio.wav>}" >&2
